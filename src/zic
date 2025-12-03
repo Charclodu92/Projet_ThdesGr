@@ -2,6 +2,3 @@
 
 import java.util.*;
 
-// Classe représentant une arête avec un poids
-class Arete implements Comparable<Arete> {
-    String source;
