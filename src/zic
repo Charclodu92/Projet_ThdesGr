@@ -1,29 +1,7 @@
 //arbre pondéré commit chill pepouze
 import java.util.*;
 
-// Classe représentant une arête avec un poids
-class Arete implements Comparable<Arete> {
-    String source;
-    String destination;
-    int poids;
-
-    public Arete(String source, String destination, int poids) {
-        this.source = source;
-        this.destination = destination;
-        this.poids = poids;
-    }
-
-    // Permet de trier les arêtes par poids croissant
-    @Override
-    public int compareTo(Arete autre) {
-        return this.poids - autre.poids;
-    }
-
-    @Override
-    public String toString() {
-        return source + "-" + destination + " (" + poids + ")";
-    }
-}
+/x;sx;m<s;x<xlmmsl;mls<x
 
 public class KruskalMST {
 
