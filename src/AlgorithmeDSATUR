@@ -140,4 +140,16 @@ public class AlgorithmeDSATUR {
         // if (poidsTotalDuJour(c) + s.poids > CAPACITE_MAX) { c++; continue; }
         
         return c;
+    }private static void afficherResultat(List<Secteur> graphe) {
+        System.out.println("\n--- Planning Final ---");
+        // On regroupe par couleur pour l'affichage
+        Map<Integer, List<String>> planning = new TreeMap<>();
+        for(Secteur s : graphe) {
+            planning.computeIfAbsent(s.couleur, k -> new ArrayList<>()).add(s.nom);
+        }
+        
+        for(Map.Entry<Integer, List<String>> entry : planning.entrySet()) {
+            System.out.println("Jour " + entry.getKey() + " : " + entry.getValue());
+        }
     }
+}
