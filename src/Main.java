@@ -47,8 +47,8 @@ public class Main {
     // sous menu collectivité
     
     private static void afficherMenuCollectivite(Scanner scanner) {
-        boolean back = false;
-        while (!back) {
+        boolean retour = false;
+        while (!retour) {
             System.out.println("ESPACE COLLECTIVITÉ ");
             System.out.println("1. Soumettre un plan / Charger un graphe");
             System.out.println("2. Signaler des travaux (modifier le graphe)");
@@ -70,7 +70,7 @@ public class Main {
                     System.out.println("");
                     break;
                 case 0:
-                    back = true;
+                    retour = true;
                     System.out.println();
                     break;
                 default:
@@ -79,10 +79,14 @@ public class Main {
         }
     }
 
-    // SOUS-MENU : ENTREPRISE
+
+    
+    // SOUS-MENU ENTREPRISE
+
+    
     private static void afficherMenuEntreprise(Scanner scanner) {
-        boolean back = false;
-        while (!back) {
+        boolean retour = false;
+        while (!retour) {
             System.out.println("--- ESPACE ENTREPRISE DE COLLECTE ---");
             System.out.println("1. Calculer une tournée optimale (Voyageur de commerce / MST)");
             System.out.println("2. Planifier les jours de collecte (Coloration)");
@@ -104,7 +108,7 @@ public class Main {
                     System.out.println(">> Gestion des capacités des camions...\n");
                     break;
                 case 0:
-                    back = true;
+                    retour = true;
                     System.out.println();
                     break;
                 default:
@@ -113,4 +117,4 @@ public class Main {
         }
     }
 }
-}
+
