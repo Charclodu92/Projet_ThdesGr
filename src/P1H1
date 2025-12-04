@@ -1,0 +1,210 @@
+import java.io.*;
+import java.util.*;
+
+// --- CLASSES DU GRAPHE ---
+
+class Noeud implements Comparable<Noeud> {
+    public String nom;
+    public List<Arc> sortants;
+    // CORRECTION : Utilisation de Integer.MAX_VALUE pour l'infini avec des entiers
+    public int minDistance = Integer.MAX_VALUE;
+    public Noeud precedent;
+
+    public Noeud(String nom) {
+        this.nom = nom;
+        this.sortants = new ArrayList<>();
+    }
+
+    // CHANGEMENT : poids en int
+    public void ajouterArc(Noeud destination, int poids) {
+        sortants.add(new Arc(destination, poids));
+    }
+
+    @Override
+    public int compareTo(Noeud autre) {
+        // Comparaison d'entiers
+        return Integer.compare(this.minDistance, autre.minDistance);
+    }
+}
+
+class Arc {
+    public Noeud cible;
+    public int poids; // CHANGEMENT : double -> int
+
+    public Arc(Noeud cible, int poids) {
+        this.cible = cible;
+        this.poids = poids;
+    }
+}
+
+public class Main {
+
+    // --- CHARGEMENT ---
+    public static Map<String, Noeud> chargerGraphe(String nomFichier) {
+        Map<String, Noeud> mapNoeuds = new HashMap<>();
+        try (BufferedReader br = new BufferedReader(new FileReader(nomFichier))) {
+            String ligne;
+            while ((ligne = br.readLine()) != null) {
+                ligne = ligne.trim();
+                if (ligne.isEmpty() || ligne.startsWith("#")) continue;
+                String[] parties = ligne.split("\\s+");
+                if (parties.length < 4) continue;
+
+                String nomDepart = parties[0];
+                String nomArrivee = parties[1];
+                // CHANGEMENT : Parsing en int
+                int poids = Integer.parseInt(parties[2]);
+                String type = parties[3];
+
+                Noeud depart = mapNoeuds.computeIfAbsent(nomDepart, Noeud::new);
+                Noeud arrivee = mapNoeuds.computeIfAbsent(nomArrivee, Noeud::new);
+                depart.ajouterArc(arrivee, poids);
+                if (type.equalsIgnoreCase("BI")) {
+                    arrivee.ajouterArc(depart, poids);
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Erreur lecture fichier : " + e.getMessage());
+        }
+        return mapNoeuds;
+    }
+
+    // --- DIJKSTRA ---
+    public static void executerDijkstra(Noeud depart, Collection<Noeud> tousLesNoeuds) {
+        for (Noeud n : tousLesNoeuds) {
+            // CHANGEMENT : Réinitialisation avec Integer.MAX_VALUE
+            n.minDistance = Integer.MAX_VALUE;
+            n.precedent = null;
+        }
+        depart.minDistance = 0;
+        PriorityQueue<Noeud> file = new PriorityQueue<>();
+        file.add(depart);
+
+        while (!file.isEmpty()) {
+            Noeud u = file.poll();
+
+            // Si la distance est infinie, on ne peut pas aller plus loin (cas noeuds inaccessibles)
+            if (u.minDistance == Integer.MAX_VALUE) continue;
+
+            for (Arc a : u.sortants) {
+                Noeud v = a.cible;
+                int poids = a.poids; // CHANGEMENT : int
+                int distanceViaU = u.minDistance + poids; // CHANGEMENT : calcul en int
+
+                if (distanceViaU < v.minDistance) {
+                    file.remove(v);
+                    v.minDistance = distanceViaU;
+                    v.precedent = u;
+                    file.add(v);
+                }
+            }
+        }
+    }
+
+    // --- RECONSTRUCTION CHEMIN ---
+    public static String construireChemin(Noeud arrivee) {
+        // CHANGEMENT : Vérification avec Integer.MAX_VALUE
+        if (arrivee.minDistance == Integer.MAX_VALUE) return "Pas de chemin";
+
+        LinkedList<String> chemin = new LinkedList<>();
+        Noeud courant = arrivee;
+        while (courant != null) {
+            chemin.addFirst(courant.nom);
+            courant = courant.precedent;
+        }
+        return String.join(" -> ", chemin);
+    }
+
+    // --- RÉSOLUTION ---
+    public static void resoudreTrajet(
+            Map<String, Noeud> mapNoeuds,
+            String nomC, String nomU, String nomV,
+            int distDepuisU, int longueurArete, boolean estSensUnique) { // CHANGEMENT : paramètres en int
+
+        Noeud C = mapNoeuds.get(nomC);
+        Noeud u = mapNoeuds.get(nomU);
+        Noeud v = mapNoeuds.get(nomV);
+
+        if (C == null || u == null || v == null) {
+            System.out.println("Erreur : Nœud introuvable.");
+            return;
+        }
+
+        System.out.println("\nSituation : Client sur rue (" + u.nom + ", " + v.nom+")");
+
+        if (estSensUnique) {
+            // 1. ALLER : C vers u
+            executerDijkstra(C, mapNoeuds.values());
+            int coutAller = u.minDistance;
+            String cheminAller = construireChemin(u);
+
+            // 2. RETOUR : v vers C
+            executerDijkstra(v, mapNoeuds.values());
+            int coutRetour = C.minDistance; // CHANGEMENT : int
+            String cheminRetour = construireChemin(C);
+
+            // CHANGEMENT : calcul total en int
+            int total = 0;
+            // Petite sécurité pour éviter les additions avec l'infini qui feraient des nombres négatifs (overflow)
+            if (coutAller == Integer.MAX_VALUE || coutRetour == Integer.MAX_VALUE) {
+                total = Integer.MAX_VALUE;
+            } else {
+                total = coutAller + longueurArete + coutRetour;
+            }
+
+            System.out.println("Type : Sens Unique : I5 -> I7");
+            System.out.println("1. Chemin aller :" + cheminAller + " = " + coutAller);
+            System.out.println("2. Rue particulier :" + u.nom + " -> Client -> " + v.nom + " = " + longueurArete);
+            System.out.println("3. Chemin retour :" + cheminRetour + " = " + coutRetour);
+
+            System.out.println("Trajet final : " + cheminAller + " -> " +cheminRetour );
+            System.out.println("Coût total   : " + total);
+
+        } else {
+            // DOUBLE SENS
+
+            // OPTION A (Sens u->v)
+            executerDijkstra(C, mapNoeuds.values());
+            int allerA = u.minDistance; // int
+            String pathAllerA = construireChemin(u);
+
+            executerDijkstra(v, mapNoeuds.values());
+            int retourA = C.minDistance; // int
+            String pathRetourA = construireChemin(C);
+
+            int totalA = (allerA == Integer.MAX_VALUE || retourA == Integer.MAX_VALUE) ? Integer.MAX_VALUE : allerA + longueurArete + retourA;
+
+            // OPTION B (Sens v->u)
+            executerDijkstra(C, mapNoeuds.values());
+            int allerB = v.minDistance; // int
+            String pathAllerB = construireChemin(v);
+
+            executerDijkstra(u, mapNoeuds.values());
+            int retourB = C.minDistance; // int
+            String pathRetourB = construireChemin(C);
+
+            int totalB = (allerB == Integer.MAX_VALUE || retourB == Integer.MAX_VALUE) ? Integer.MAX_VALUE : allerB + longueurArete + retourB;
+
+            System.out.println("TYPE : Double Sens (Comparaison)");
+            System.out.println("Trajet 1 (via " + u.nom + " puis " + v.nom + ") : " + totalA);
+            System.out.println("   Chemin : " + pathAllerA + " -> " + pathRetourA);
+
+            System.out.println("Trajet 2 (via " + v.nom + " puis " + u.nom + ") : " + totalB);
+            System.out.println("   Chemin : " + pathAllerB + " -> " + pathRetourB);
+
+            if (totalA < totalB) {
+                System.out.println("MEILLEUR CHOIX : OPTION A (" + totalA + ")");
+            } else {
+                System.out.println("MEILLEUR CHOIX : OPTION B (" + totalB + ")");
+            }
+        }
+    }
+
+    public static void main(String[] args) {
+        Map<String, Noeud> mapNoeuds = chargerGraphe("test1.txt");
+
+        // --- VOTRE DEMANDE SPÉCIFIQUE ---
+        // CHANGEMENT : passage de paramètres en int (1, 2) au lieu de double (1.0, 2.0)
+        resoudreTrajet(mapNoeuds, "C", "I5", "I7", 1, 2, false);
+    }
+}
