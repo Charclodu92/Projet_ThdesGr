@@ -1,0 +1,102 @@
+import java.util.*;
+import java.util.stream.Collectors;
+
+// Classe représentant un Sommet (Secteur)
+class Secteur {
+    String nom;
+    List<Secteur> voisins;
+    int couleur; // -1 = non colorié, 0, 1, 2... = jours attribués
+
+    public Secteur(String nom) {
+        this.nom = nom;
+        this.voisins = new ArrayList<>();
+        this.couleur = -1;
+    }
+
+    public void ajouterVoisin(Secteur s) {
+        if (!voisins.contains(s)) {
+            voisins.add(s);
+            s.voisins.add(this); // Graphe non orienté
+        }
+    }
+
+    // Calcule le Degré (nombre total de voisins)
+    public int getDegre() {
+        return voisins.size();
+    }
+
+    // Calcule le DSAT (Degree of Saturation)
+    // C'est le nombre de couleurs UNIQUES utilisées par les voisins
+    public int getDSAT() {
+        Set<Integer> couleursVoisins = new HashSet<>();
+        for (Secteur v : voisins) {
+            if (v.couleur != -1) {
+                couleursVoisins.add(v.couleur);
+            }
+        }
+        return couleursVoisins.size();
+    }
+
+    // Calcule le degré dans le sous-graphe non colorié (pour départager les égalités)
+    public int getDegreNonColorie() {
+        int count = 0;
+        for (Secteur v : voisins) {
+            if (v.couleur == -1) count++;
+        }
+        return count;
+    }
+}
+
+public class AlgorithmeDSATUR {
+
+    public static void main(String[] args) {
+        // 1. Initialisation du Graphe (Le même que précédemment)
+        Secteur A = new Secteur("A"); Secteur B = new Secteur("B");
+        Secteur C = new Secteur("C"); Secteur D = new Secteur("D");
+        Secteur E = new Secteur("E"); Secteur F = new Secteur("F");
+        Secteur G = new Secteur("G"); Secteur H = new Secteur("H");
+
+        H.ajouterVoisin(A); H.ajouterVoisin(B); H.ajouterVoisin(C); H.ajouterVoisin(E); H.ajouterVoisin(G);
+        A.ajouterVoisin(B);
+        B.ajouterVoisin(C); B.ajouterVoisin(G);
+        C.ajouterVoisin(D); C.ajouterVoisin(E);
+        D.ajouterVoisin(E);
+        E.ajouterVoisin(F); E.ajouterVoisin(G);
+        F.ajouterVoisin(G);
+
+        List<Secteur> graphe = Arrays.asList(A, B, C, D, E, F, G, H);
+
+        // 2. Exécution de DSATUR
+        System.out.println("--- Démarrage de DSATUR ---");
+        executerDSATUR(graphe);
+
+        // 3. Affichage des résultats
+        afficherResultat(graphe);
+    }
+
+    public static void executerDSATUR(List<Secteur> graphe) {
+        int nbSommetsTraites = 0;
+        int n = graphe.size();
+
+        while (nbSommetsTraites < n) {
+            // ÉTAPE 1 : Choisir le sommet avec le DSAT max
+            Secteur sommetChoisi = choisirMeilleurSommet(graphe);
+
+            if (sommetChoisi == null) break; // Sécurité
+
+            // ÉTAPE 2 : Lui trouver la plus petite couleur disponible
+            int couleur = trouverPlusPetiteCouleur(sommetChoisi);
+            sommetChoisi.couleur = couleur;
+
+            System.out.println("Sommet choisi : " + sommetChoisi.nom + 
+                               " (DSAT=" + sommetChoisi.getDSAT() + ") -> Couleur " + couleur);
+            nbSommetsTraites++;
+        }
+    }
+
+    // C'est le COEUR de l'algorithme DSATUR
+    private static Secteur choisirMeilleurSommet(List<Secteur> graphe) {
+        Secteur meilleur = null;
+        int maxDSAT = -1;
+        int maxDegreNonColorie = -1;
+
