@@ -98,11 +98,11 @@ public class Main {
             switch (choix) {
                 case 1:
                     System.out.println(">> Lancement de l'algorithme MST / Shortcutting...\n");
-                    // TODO: Appeler votre classe Kruskal ou Prim ici
+                    // Appeler votre classe Kruskal ou Prim ici
                     break;
                 case 2:
                     System.out.println(">> Lancement de l'algorithme de Coloration (Welsh & Powell)...\n");
-                    // TODO: Appeler votre algorithme de coloration ici
+                    //  Appeler votre algorithme de coloration ici
                     break;
                 case 3:
                     System.out.println(">> Gestion des capacités des camions...\n");
