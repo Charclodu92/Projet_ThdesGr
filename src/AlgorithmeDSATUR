@@ -100,3 +100,44 @@ public class AlgorithmeDSATUR {
         int maxDSAT = -1;
         int maxDegreNonColorie = -1;
 
+   for (Secteur s : graphe) {
+            if (s.couleur != -1) continue; // On ignore les sommets déjà faits
+
+            int dsatActuel = s.getDSAT();
+            int degreActuel = s.getDegreNonColorie();
+
+            // Règle 1 : On cherche le DSAT le plus grand
+            if (dsatActuel > maxDSAT) {
+                maxDSAT = dsatActuel;
+                maxDegreNonColorie = degreActuel;
+                meilleur = s;
+            } 
+            // Règle 2 (Égalité) : On départage par le degré (nombre de voisins non coloriés)
+            else if (dsatActuel == maxDSAT) {
+                if (degreActuel > maxDegreNonColorie) {
+                    maxDegreNonColorie = degreActuel;
+                    meilleur = s;
+                }
+            }
+        }
+        return meilleur;
+    }
+
+    private static int trouverPlusPetiteCouleur(Secteur s) {
+        Set<Integer> couleursVoisins = new HashSet<>();
+        for (Secteur v : s.voisins) {
+            if (v.couleur != -1) {
+                couleursVoisins.add(v.couleur);
+            }
+        }
+
+        int c = 1; // On commence à la couleur 1 (Jour 1)
+        while (couleursVoisins.contains(c)) {
+            c++;
+        }
+        
+        // ICI : Pour l'Hypothèse 2 (Poids), il faudrait ajouter une condition :
+        // if (poidsTotalDuJour(c) + s.poids > CAPACITE_MAX) { c++; continue; }
+        
+        return c;
+    }
