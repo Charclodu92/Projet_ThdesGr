@@ -1,0 +1,95 @@
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Scanner;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.FileWriter;
+
+
+public class charger_plan {
+    private List<Arete> reseau = new ArrayList<>();
+    private String nomFichier;
+
+    public charger_plan(String nomFichier) {
+        this.nomFichier = nomFichier;
+    }
+
+
+    public void chargerReseau() {
+        reseau.clear();
+        try (Scanner sc = new Scanner(new File(nomFichier))) {
+            while (sc.hasNextLine()) {
+                String ligne = sc.nextLine();
+                if (ligne.isEmpty()) continue;
+                String[] parts = ligne.split(";");
+                if (parts.length >= 4) {
+                    reseau.add(new Arete(parts[0], parts[1], parts[2], Integer.parseInt(parts[3])));
+                }
+            }
+            System.out.println("Fichier trouve");
+        } catch (FileNotFoundException e) {
+            System.out.println("Fichier pas trouve");
+        }
+    }
+
+
+    public void sauvegarderReseau() {
+        try (PrintWriter writer = new PrintWriter(new FileWriter(nomFichier))) {
+            for (Arete a : reseau) {
+
+                writer.println(a.nomRue + ";" + a.source + ";" + a.destination + ";" + a.poids);
+            }
+        } catch (IOException e) {
+            System.out.println("[ERREUR CRITIQUE] Impossible d'écrire dans le fichier !");
+            e.printStackTrace();
+        }
+    }
+
+
+
+    public Arete getAreteParNom(String nom) {
+        for (Arete a : reseau) {
+            if (a.nomRue.equalsIgnoreCase(nom)) return a;
+        }
+        return null;
+    }
+
+    public Arete getAreteInverse(Arete aller) {
+        for (Arete a : reseau) {
+            if (a.source.equals(aller.destination) && a.destination.equals(aller.source)) {
+                return a;
+            }
+        }
+        return null;
+    }
+
+
+
+
+    public void transformerEnDoubleSens(Arete aller) {
+        String nomRetour = new StringBuilder(aller.nomRue).reverse().toString();
+        if (getAreteParNom(nomRetour) != null) {
+            nomRetour = aller.destination + aller.source;
+        }
+        Arete retour = new Arete(nomRetour, aller.destination, aller.source, aller.poids);
+        reseau.add(retour);
+        sauvegarderReseau();
+        System.out.println("-> [FICHIER MODIFIÉ] Ligne ajoutée : " + nomRetour + ";" + aller.destination + ";" + aller.source + ";" + aller.poids);
+    }
+
+    public void ajouter(String Nom,String A, String B,int poids) {
+        Arete aller = new Arete(Nom, B, A, poids);
+        reseau.add(aller);
+        sauvegarderReseau();
+        System.out.println("La rue a été ajouté au fichier");
+    }
+
+
+    public void transformerEnSensUnique(Arete retourASupprimer) {
+        reseau.remove(retourASupprimer);
+        sauvegarderReseau();
+        System.out.println("-> [FICHIER MODIFIÉ] Ligne supprimée : " + retourASupprimer.nomRue);
+    }
+}
