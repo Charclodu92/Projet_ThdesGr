@@ -16,6 +16,18 @@ public class charger_plan {
         this.nomFichier = nomFichier;
     }
 
+ public void sauvegarderReseau() {
+        try (PrintWriter writer = new PrintWriter(new FileWriter(nomFichier))) {
+            for (Arete a : reseau) {
+
+                writer.println(a.nomRue + ";" + a.source + ";" + a.destination + ";" + a.poids);
+            }
+        } catch (IOException e) {
+            System.out.println("[ERREUR CRITIQUE] Impossible d'écrire dans le fichier !");
+            e.printStackTrace();
+        }
+    }
+
 
     public void chargerReseau() {
         reseau.clear();
@@ -35,32 +47,12 @@ public class charger_plan {
     }
 
 
-    public void sauvegarderReseau() {
-        try (PrintWriter writer = new PrintWriter(new FileWriter(nomFichier))) {
-            for (Arete a : reseau) {
-
-                writer.println(a.nomRue + ";" + a.source + ";" + a.destination + ";" + a.poids);
-            }
-        } catch (IOException e) {
-            System.out.println("[ERREUR CRITIQUE] Impossible d'écrire dans le fichier !");
-            e.printStackTrace();
-        }
-    }
 
 
 
     public Arete getAreteParNom(String nom) {
         for (Arete a : reseau) {
             if (a.nomRue.equalsIgnoreCase(nom)) return a;
-        }
-        return null;
-    }
-
-    public Arete getAreteInverse(Arete aller) {
-        for (Arete a : reseau) {
-            if (a.source.equals(aller.destination) && a.destination.equals(aller.source)) {
-                return a;
-            }
         }
         return null;
     }
