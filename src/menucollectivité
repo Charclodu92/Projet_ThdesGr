@@ -3,6 +3,8 @@ import java.util.Scanner;
 public class menucollectivité {
     private static Graphe ville = new Graphe(); // Suppose que tu as ta classe Graphe ailleurs
 
+
+
     public static void afficherMenu() {
         // Chargement initial du graphe routier (pour l'option 1)
         ville.chargerDepuisFichier("ville.txt");
@@ -39,7 +41,7 @@ public class menucollectivité {
         }
     }
 
-    // --- METHODES POUR DSATUR (OPTION 3) ---
+
     private static void lancerPlanificationSecteurs(Scanner sc) {
         System.out.println("\n--- CONFIGURATION DSATUR ---");
 
@@ -52,9 +54,7 @@ public class menucollectivité {
         // Création du gestionnaire
         GestionCollecte gestion = new GestionCollecte(n, c);
 
-        String nomFichier = "secteurs.txt";
 
-        // Chargement et Exécution
         gestion.chargerDepuisFichier(nomFichier);
 
         System.out.println(">> Calcul de l'optimisation...");
