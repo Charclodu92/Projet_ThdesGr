@@ -1,0 +1,209 @@
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Scanner;
+
+public class menu_entreprise {
+    private static Graphe ville = new Graphe();
+
+
+
+    private static void Dijkstra_un_particulier(Scanner sc) {
+        String C = "C";
+        System.out.print("\nOù se trouve le particulier(ex:ABY) : ");
+        sc.nextLine();
+        String idRue = sc.nextLine();
+
+        Arete sens1 = ville.getAreteParNom(idRue);
+        if (sens1 == null) {
+            System.out.println("Erreur : L'arête '" + idRue + "' est introuvable.");
+            return;
+        }
+
+        String u = sens1.source;
+        String v = sens1.destination;
+        System.out.println("Arête trouvée : " + u + " vers " + v);
+
+        Arete sens2 = ville.getAreteParExtremites(v, u);
+
+        if (sens2 == null) {
+            System.out.println("La rue est a sens unique");
+            calculerBoucle(C, u, v, sens1.poids, "Sens unique (" + u + "->" + v + ")");
+        }
+
+        else {
+            System.out.println("La rue est a double sens");
+            int cout1 = calculerBoucle(C, u, v, sens1.poids, "T1 (" + u + "->" + v + ")");
+            int cout2 = calculerBoucle(C, v, u, sens2.poids, "T2 (" + v + "->" + u + ")");
+
+            if (cout1 == Integer.MAX_VALUE && cout2 == Integer.MAX_VALUE) {
+                System.out.println("Aucun chemin qui n'existe");
+            } else if (cout1 <= cout2) {
+                System.out.println("Meilleur trajet c'est T1 (" + u + " -> " + v + ")");
+            } else {
+                System.out.println("Meilleur trajet c'est T2 (" + v + " -> " + u + ")");
+            }
+        }
+    }
+
+
+
+
+
+
+
+
+    public static void afficherMenu() {
+
+        ville.chargerDepuisFichier("ville.txt");
+
+        Scanner sc = Main.scanner;
+        boolean retour = false;
+
+        while (!retour) {
+
+            System.out.println("\n /////  Menu Entreprise - Bienvenue /////");
+            System.out.println("0] Lancer une collecte (un seul particulier)");
+            System.out.println("1] Lancer une tournee de collecte (plusieurs particulier)");
+            System.out.println("2] Planifier les secteurs à collecter");
+            System.out.println("3] Planifier ramassage point de collecte");
+            System.out.println("4] Planifier ramassage poubelles");
+            System.out.println("5] Retour");
+            System.out.print("Que decidez-vous ? ");
+            int choix = sc.nextInt();
+
+
+            switch (choix) {
+                case 0:
+
+                    Dijkstra_un_particulier(sc);
+                    break;
+                case 1:
+
+                    Dijkstra_plusieurs_particulier(sc);
+                    break;
+                case 2:
+
+                    System.out.println("\n---/ Planification de collecte de secteur /---");                   // Permet de planifier des jours de ramassage avec des ecteurs contigus (donc collé geographiquemnt)
+                    System.out.println("1] Collecte de secteur avec stockage illimité (DSATUR pur)");
+                    System.out.println("2] Collecte de secteur avec stockage limité (Camions & Capacité)");
+                    System.out.println("3] Sortir");
+                    System.out.print("Que choisissez vous ? : ");
+                    Integer choixSecteur = sc.nextInt();
+
+                    if (choixSecteur.equals(1)) {
+
+                        lancerPlanificationSecteursIllimite(sc);
+                    } else if (choixSecteur.equals(2)) {
+
+                        lancerPlanificationSecteurs(sc);
+                    } else {
+
+                    }
+                    break;
+                case 3:
+
+                    System.out.println("\n - Collecte des Déchets -");
+                    service_de_collecte servicePoubelle = new service_de_collecte();
+                    servicePoubelle.charger_reseau_de_collecte("point.txt");
+                    List<arete_pour_collecte> resultat = servicePoubelle.calculerCircuitMinimum();
+
+                    if (resultat.isEmpty()) {
+                        System.out.println("Aucune route trouvée ou fichier vide.");
+                    } else {
+                        // 4. Affichage
+                        int coutTotal = 0;
+                        System.out.println("Résultat de l'arbre qui permet de trouver un trajet qui passe par tous les ");
+                        for (arete_pour_collecte r : resultat) {
+                            System.out.println(" Prendre chemin " + r.nom_ar + " (" + r.secteur1 + " <-> " + r.secteur2 + ") : " + r.cout);
+                            coutTotal += r.cout;
+                        }
+                        System.out.println("Distance Total: " + coutTotal);
+                    }
+                    break;
+                case 4:
+
+                    break;
+                case 5:
+                    retour = true;
+                    break;
+                default:
+                    System.out.println("Choix incorrect.");
+            }
+        }
+    }
+
+    private static void lancerPlanificationSecteursIllimite(Scanner sc) {
+
+        System.out.println("On ne prend pas en compte le stockage");
+
+        gestion_de_collecte gestion = new gestion_de_collecte(1, 0);
+        String nomFichier = "secteurs.txt";
+        gestion.chargement_fichier(nomFichier);
+
+        gestion.planification_sans_stockage();
+    }
+
+    private static void lancerPlanificationSecteurs(Scanner sc) {
+        System.out.println("\n - Collecte secteur avec stockage limité - ");
+        System.out.print("Combien de camions ? : ");
+        int n = sc.nextInt();
+        System.out.print("Capacité des camions : ");
+        int c = sc.nextInt();
+        gestion_de_collecte gestion = new gestion_de_collecte(n, c);
+        String nomFichier = "secteurs.txt";
+        gestion.chargement_fichier(nomFichier);
+        gestion.planifierCollecte();
+
+    }
+
+
+
+    private static int calculerBoucle(String C, String u, String v, int poids, String titre) {
+        System.out.println("\nCalcul " + titre + " :");
+        resultat_chemin aller = ville.plusCourtChemin(C, u);
+        resultat_chemin retour = ville.plusCourtChemin(v, C);
+
+        if (aller.distance == -1 || retour.distance == -1) {
+            System.out.println("  Chemin impossible (graphe déconnecté ?).");
+            return Integer.MAX_VALUE;
+        }
+
+        int total = aller.distance + poids + retour.distance;
+        System.out.println("\n1) Chemin aller (" + C + "->" + u + ") : " + aller.distance );
+        System.out.println("Trajet Aller : " + String.join(" -> ", aller.chemin));
+        System.out.println("\n2) Collecte Particulier (" + u + "->" + v + ") : " + poids);
+        System.out.println("\n3) Chemin retour (" + v + "->" + C + ") : " + retour.distance );
+        System.out.println("Trajet Retour : " + String.join(" -> ", retour.chemin) );
+        System.out.println("\nLe trajet tota l est : " + total);
+        return total;
+    }
+
+
+
+    private static void Dijkstra_plusieurs_particulier(Scanner sc) {
+        System.out.print("\nCombien de particulier à visiter (maximum 10particulier ) ? : ");
+        int nb = sc.nextInt();
+        if (nb > 10 || nb < 1) {
+            System.out.println("nombre de particulier invalide.");
+            return;
+        }
+
+        List<Arete> aretesAVisiter = new ArrayList<>();
+
+        for (int i = 0; i < nb; i++) {
+            System.out.print("Nom de l'arête " + (i + 1) + " (ex: AB) : ");
+            String nom = sc.nextLine();
+
+            Arete a = ville.getAreteParNom(nom);
+            if (a == null) {
+                System.out.println("Erreur : Arête introuvable. Réessayez.");
+                i--;
+            } else {
+                aretesAVisiter.add(a);
+            }
+        }
+        optimisation_tournee optimiseur = new optimisation_tournee(ville);
+        optimiseur.trouverMeilleureTournee(aretesAVisiter);
+
+    }
+}
