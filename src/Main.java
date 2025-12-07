@@ -1,11 +1,13 @@
 import java.util.Scanner;
 
 public class Main {
+    
     public static final Scanner scanner = new Scanner(System.in);
 
     public static void main(String[] args) {
         System.out.println(" \n /////   SYSTÈME DE GESTION DE POUBELLES  /////  ");
         boolean a = true;
+        
         while (a) {
             System.out.println("\nQui êtes-vous ?:");
             System.out.println("1] Collectivite");
