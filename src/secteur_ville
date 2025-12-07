@@ -17,6 +17,13 @@ public class secteur_ville {
         return joursVoisins.size();
     }
 
+public void ajouter_un_voisin(secteur_ville s) {
+        if (!this.voisins.contains(s)) {
+            this.voisins.add(s);
+            s.voisins.add(this);
+        }
+    }
+
     int capacite_dechet;
     List<secteur_ville> voisins;
         int couleur_attribue = 0;
@@ -32,12 +39,5 @@ public class secteur_ville {
         return voisins.size();
     }
 
-    public void ajouter_un_voisin(secteur_ville s) {
-        if (!this.voisins.contains(s)) {
-            this.voisins.add(s);
-            s.voisins.add(this);
-        }
-    }
-
-
+ 
 }
