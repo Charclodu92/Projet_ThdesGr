@@ -1,1 +1,188 @@
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.util.*;
 
+public class gestion_de_collecte {
+
+    private List<secteur_ville> secteurs;
+    private int capaciteTotaleJournaliere;
+
+    public gestion_de_collecte(int nombreCamions, int capaciteParCamion) {
+        this.secteurs = new ArrayList<>();
+        this.capaciteTotaleJournaliere = nombreCamions * capaciteParCamion;
+    }
+
+
+    public void chargerDepuisFichier(String nomFichier) {
+        this.secteurs.clear();
+
+        try (Scanner scFichier = new Scanner(new File(nomFichier))) {
+            if (!scFichier.hasNextInt()) return;
+            int nbSecteurs = scFichier.nextInt();
+            scFichier.nextLine();
+
+            for (int i = 0; i < nbSecteurs; i++) {
+                String nom = scFichier.nextLine().trim();
+
+                int volumeSimule = 5 + (int)(Math.random() * 11);
+                secteur_ville s = new secteur_ville(i, nom, volumeSimule);
+                this.secteurs.add(s);
+            }
+
+            for (int i = 0; i < nbSecteurs; i++) {
+                for (int j = 0; j < nbSecteurs; j++) {
+                    int val = scFichier.nextInt();
+                    if (val == 1 && i < j) {
+                        secteur_ville source = secteurs.get(i);
+                        secteur_ville destination = secteurs.get(j);
+                        source.ajouter_un_voisin(destination);
+                    }
+                }
+            }
+            System.out.println(">> Fichier chargé : " + nbSecteurs + " secteurs importés.");
+
+        } catch (FileNotFoundException e) {
+            System.out.println("Erreur : Le fichier '" + nomFichier + "' est introuvable.");
+        } catch (Exception e) {
+            System.out.println("Erreur de lecture : " + e.getMessage());
+        }
+    }
+
+
+    public void planifierCollecte() {
+        if (secteurs.isEmpty()) {
+            System.out.println("Aucun secteur à planifier.");
+            return;
+        }
+
+        Map<Integer, Integer> chargesParJour = new HashMap<>();
+        int secteursTraites = 0;
+        int nombreTotalSecteurs = secteurs.size();
+
+        for(secteur_ville s : secteurs) s.couleur_attribué = -1;
+
+        while (secteursTraites < nombreTotalSecteurs) {
+            secteur_ville meilleurSecteur = getNextSecteurToColor();
+            if (meilleurSecteur == null) break;
+
+            int jour = 0;
+            boolean assigne = false;
+
+            while (!assigne) {
+                if (estJourValide(meilleurSecteur, jour, chargesParJour)) {
+                    meilleurSecteur.couleur_attribué = jour;
+                    int chargeActuelle = chargesParJour.getOrDefault(jour, 0);
+                    chargesParJour.put(jour, chargeActuelle + meilleurSecteur.capacité_dechet);
+                    assigne = true;
+                    secteursTraites++;
+                } else {
+                    jour++;
+                }
+            }
+        }
+        afficherResultats(chargesParJour);
+    }
+
+
+    public void planifierCollecteSansCapacite() {
+        if (secteurs.isEmpty()) {
+            System.out.println("Aucun secteur à planifier.");
+            return;
+        }
+
+        int secteursTraites = 0;
+        int nombreTotalSecteurs = secteurs.size();
+
+
+        for(secteur_ville s : secteurs) s.couleur_attribué = -1;
+
+        while (secteursTraites < nombreTotalSecteurs) {
+
+            secteur_ville meilleurSecteur = getNextSecteurToColor();
+            if (meilleurSecteur == null) break;
+
+            int jour = 0;
+            boolean assigne = false;
+
+            while (!assigne) {
+
+                if (estJourValideGraphOnly(meilleurSecteur, jour)) {
+                    meilleurSecteur.couleur_attribué = jour;
+                    assigne = true;
+                    secteursTraites++;
+                } else {
+                    jour++;
+                }
+            }
+        }
+
+        afficherResultatsSimple();
+    }
+
+    private secteur_ville getNextSecteurToColor() {
+        secteur_ville best = null;
+        int maxSat = -1;
+        int maxDeg = -1;
+
+        for (secteur_ville s : secteurs) {
+            if (s.couleur_attribué == -1) {
+                int sat = s.saturation_niveau_degre();
+                int deg = s.regarder_degre();
+
+                if (sat > maxSat || (sat == maxSat && deg > maxDeg)) {
+                    maxSat = sat;
+                    maxDeg = deg;
+                    best = s;
+                }
+            }
+        }
+        return best;
+    }
+
+    private boolean estJourValide(secteur_ville s, int jour, Map<Integer, Integer> charges) {
+        for (secteur_ville voisin : s.voisins) {
+            if (voisin.couleur_attribué == jour) return false;
+        }
+        int chargeActuelle = charges.getOrDefault(jour, 0);
+        return (chargeActuelle + s.capacité_dechet <= capaciteTotaleJournaliere);
+    }
+
+    private boolean estJourValideGraphOnly(secteur_ville s, int jour) {
+        for (secteur_ville voisin : s.voisins) {
+            if (voisin.couleur_attribué == jour) return false;
+        }
+        return true;
+    }
+
+
+    private void afficherResultats(Map<Integer, Integer> charges) {
+        System.out.println("\n--- RÉSULTAT PLANIFICATION (AVEC CONTRAINTES DE CHARGE) ---");
+        System.out.println("Capacité max journalière : " + capaciteTotaleJournaliere + " tonnes");
+        printPlanning(charges);
+    }
+
+    private void afficherResultatsSimple() {
+        System.out.println("\n--- RÉSULTAT PLANIFICATION (SANS LIMITE DE CHARGE) ---");
+        System.out.println("Seules les incompatibilités géographiques sont prises en compte.");
+
+        printPlanning(null);
+    }
+
+    private void printPlanning(Map<Integer, Integer> charges) {
+        Map<Integer, List<String>> planning = new TreeMap<>();
+        for(secteur_ville s : secteurs) {
+            planning.computeIfAbsent(s.couleur_attribué, k -> new ArrayList<>())
+                    .add(s.nomsecteur + " [" + s.capacité_dechet + "t]");
+        }
+
+        for (Map.Entry<Integer, List<String>> entry : planning.entrySet()) {
+            int jour = entry.getKey();
+            String infoCharge = (charges != null) ? " (Charge : " + charges.get(jour) + "t)" : "";
+
+            System.out.println("JOUR " + (jour + 1) + infoCharge);
+            for(String s : entry.getValue()) {
+                System.out.println("   - " + s);
+            }
+        }
+    }
+}
