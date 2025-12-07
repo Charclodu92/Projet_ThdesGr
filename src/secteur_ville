@@ -1,0 +1,43 @@
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+public class secteur_ville {
+    int identification;
+    String nomsecteur;
+
+    public int saturation_niveau_degre() {
+        Set<Integer> joursVoisins = new HashSet<>();
+        for (secteur_ville v : voisins) {
+            if (v.couleur_attribue != 0) {
+                joursVoisins.add(v.couleur_attribue);
+            }
+        }
+        return joursVoisins.size();
+    }
+
+    int capacite_dechet;
+    List<secteur_ville> voisins;
+        int couleur_attribue = 0;
+
+    public secteur_ville(int id, String nom, int decht) {
+        this.identification = id;
+        this.nomsecteur = nom;
+        this.capacite_dechet = decht;
+        this.voisins = new ArrayList<>();
+    }
+
+    public int regarder_degre() {
+        return voisins.size();
+    }
+
+    public void ajouter_un_voisin(secteur_ville s) {
+        if (!this.voisins.contains(s)) {
+            this.voisins.add(s);
+            s.voisins.add(this);
+        }
+    }
+
+
+}
