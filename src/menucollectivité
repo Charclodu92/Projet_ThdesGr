@@ -1,0 +1,123 @@
+import java.util.Scanner;
+
+public class menucollectivité {
+    private static Graphe ville = new Graphe(); // Suppose que tu as ta classe Graphe ailleurs
+
+    public static void afficherMenu() {
+        // Chargement initial du graphe routier (pour l'option 1)
+        ville.chargerDepuisFichier("ville.txt");
+
+        Scanner sc = MainApp.scanner;
+        boolean retour = false;
+
+        while (!retour) {
+            System.out.println("\n--- MENU COLLECTIVITÉ ---");
+            System.out.println("1. Lancer une collecte (Itinéraire routier)");
+            System.out.println("2. Changer de fichier (Itinéraire)");
+            System.out.println("3. Planifier les secteurs (Algo DSATUR)");
+            System.out.println("0. Retour");
+            System.out.print("Choix > ");
+            int choix = MainApp.lireEntier();
+
+            switch (choix) {
+                case 1:
+                    calculerTrajet(sc);
+                    break;
+                case 2:
+                    System.out.print("Nom du fichier graphe : ");
+                    ville.chargerDepuisFichier(sc.nextLine());
+                    break;
+                case 3:
+                    lancerPlanificationSecteurs(sc);
+                    break;
+                case 0:
+                    retour = true;
+                    break;
+                default:
+                    System.out.println("Choix incorrect.");
+            }
+        }
+    }
+
+    // --- METHODES POUR DSATUR (OPTION 3) ---
+    private static void lancerPlanificationSecteurs(Scanner sc) {
+        System.out.println("\n--- CONFIGURATION DSATUR ---");
+
+        System.out.print("Nombre de camions : ");
+        int n = MainApp.lireEntier();
+
+        System.out.print("Capacité par camion (tonnes) : ");
+        int c = MainApp.lireEntier();
+
+        // Création du gestionnaire
+        GestionCollecte gestion = new GestionCollecte(n, c);
+
+        String nomFichier = "secteurs.txt";
+
+        // Chargement et Exécution
+        gestion.chargerDepuisFichier(nomFichier);
+
+        System.out.println(">> Calcul de l'optimisation...");
+        gestion.planifierCollecte();
+
+        System.out.println("\n[Terminé] Appuyez sur Entrée...");
+        sc.nextLine();
+    }
+
+    // --- ANCIENNES METHODES (OPTION 1 & 2) ---
+    private static void calculerTrajet(Scanner sc) {
+        System.out.print("Nom du Centre (ex: La Defense) : ");
+        String C = sc.nextLine();
+        System.out.print("Identifiant de l'arête (ex: M1, AB) : ");
+        String idRue = sc.nextLine();
+
+        Arete sens1 = ville.getAreteParNom(idRue);
+        if (sens1 == null) {
+            System.out.println("Erreur : L'arête '" + idRue + "' est introuvable.");
+            return;
+        }
+
+        String u = sens1.source;
+        String v = sens1.destination;
+        System.out.println("-> Arête trouvée : " + u + " vers " + v);
+
+        Arete sens2 = ville.getAreteParExtremites(v, u);
+
+        if (sens2 == null) {
+            System.out.println("Type : SENS UNIQUE.");
+            calculerBoucle(C, u, v, sens1.poids, "Sens unique (" + u + "->" + v + ")");
+        } else {
+            System.out.println("Type : DOUBLE SENS.");
+            int cout1 = calculerBoucle(C, u, v, sens1.poids, "Option 1 (" + u + "->" + v + ")");
+            System.out.println("-----------------");
+            int cout2 = calculerBoucle(C, v, u, sens2.poids, "Option 2 (" + v + "->" + u + ")");
+
+            System.out.println("\n>>> RÉSULTAT FINAL <<<");
+            if (cout1 == Integer.MAX_VALUE && cout2 == Integer.MAX_VALUE) {
+                System.out.println("Aucun chemin possible.");
+            } else if (cout1 <= cout2) {
+                System.out.println("Meilleur trajet : OPTION 1 (" + u + " -> " + v + ")");
+            } else {
+                System.out.println("Meilleur trajet : OPTION 2 (" + v + " -> " + u + ")");
+            }
+        }
+    }
+
+    private static int calculerBoucle(String C, String u, String v, int poids, String titre) {
+        System.out.println("\nCalcul " + titre + " :");
+        ResultatChemin aller = ville.plusCourtChemin(C, u);
+        ResultatChemin retour = ville.plusCourtChemin(v, C);
+
+        if (aller.distance == -1 || retour.distance == -1) {
+            System.out.println("  Chemin impossible.");
+            return Integer.MAX_VALUE;
+        }
+
+        int total = aller.distance + poids + retour.distance;
+        System.out.println("  1. Aller (" + C + "->" + u + ") : " + aller.distance);
+        System.out.println("  2. Rue (" + u + "->" + v + ") : " + poids);
+        System.out.println("  3. Retour (" + v + "->" + C + ") : " + retour.distance);
+        System.out.println("  = TOTAL : " + total);
+        return total;
+    }
+}
